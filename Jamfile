@@ -3,8 +3,8 @@ SubDir TOP ;
 HDRS ?= $(TOP)/include ;
 
 CCFLAGS ?= -g ;
-LINKFLAGS ?= -lpthread ;
 
+LINKLIBS ?= -lpthread ;
 OBJDIR = obj-$(OSPLAT) ;
 
 rule ProcMgrMain {

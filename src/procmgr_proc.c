@@ -8,7 +8,7 @@
 
 
 pmerr
-procmgr_create_process (char    *executable,
+procmgr_process_create (char    *executable,
                         int      argc,
                         char   **args,
                         pid_t   *pid)
