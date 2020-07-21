@@ -1,0 +1,18 @@
+SubDir TOP ;
+
+HDRS ?= $(TOP)/include ;
+
+CCFLAGS ?= -g ;
+LINKFLAGS ?= -lpthread ;
+
+OBJDIR = obj-$(OSPLAT) ;
+
+rule ProcMgrMain {
+    Echo ProcMgrMain $(1) ;
+    NLT = $(LOCATE_TARGET) ;
+    LOCATE_TARGET = $(OBJDIR) ;
+    Main $(<) : $(>) ;
+    LOCATE_TARGET = $(NLT) ;
+}
+
+SubInclude TOP src ;
