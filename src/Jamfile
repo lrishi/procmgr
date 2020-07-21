@@ -4,6 +4,7 @@ ProcMgrMain procmgr :
     procmgr_main.c
     procmgr_proc.c
     procmgr_debug.c
+    procmgr_shell.c
     procmgr_context.c
     ;
 

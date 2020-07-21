@@ -7,6 +7,7 @@
 
 typedef struct procmgr_context_st_ {
     pid_t                    mypid;
+    pthread_t                shell_tid;
     procmgr_debug_context_st debug;
     
 } procmgr_context_st;
