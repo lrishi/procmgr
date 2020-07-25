@@ -15,7 +15,8 @@
 #define CMD_LENGTH_MAX  1024
 static char cmd[CMD_LENGTH_MAX] = {'\0'};
 static int  current_length = 0;
- 
+
+
 static char
 getch ()
 {
@@ -34,8 +35,8 @@ getch ()
 }
 
 
-void
-sighandler(int signum) {
+static void
+sighandler (int signum) {
     fprintf(stdout, "\nType exit to exit\n");
     fprintf(stdout, "\nProcessManager# "); 
     fflush(stdout);
@@ -44,8 +45,8 @@ sighandler(int signum) {
     
 }
 
-void
-signals_register ()
+static void
+procmgr_shell_signal_handlers_init ()
 {
     signal(SIGINT, sighandler);
     signal(SIGSTOP, SIG_IGN);
@@ -58,8 +59,8 @@ signals_register ()
 void*
 procmgr_shell_thread_func (void *arg)
 {
+    (void) procmgr_shell_signal_handlers_init();
     printf("\n"); 
-    signals_register();
     while (TRUE) {
         printf("ProcessManager# ");
         memset(cmd, '\0', sizeof(cmd));

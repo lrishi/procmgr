@@ -16,20 +16,28 @@
            __LINE__, ##__VA_ARGS__);
 
 void
+exit_to_parent (int err)
+{
+    printf("\nActivating pid: %d and exiting...\n", procmgr_context()->parent_shell_pid);
+    kill(procmgr_context()->parent_shell_pid, SIGCONT);
+    exit(err);
+}
+
+void
 procmgr_main_ensure_singleton (void)
 {
     FILE *fp = NULL;
     if ((fp = fopen(LOCK_FILENAME, "w+")) == NULL) {
         PREDEBUG_ERR("Failed to initialize process with error code=0x%x",
                      errno);
-        exit(errno);
+        exit_to_parent(errno);
     }
 
     if (flock(fileno(fp), LOCK_EX | LOCK_NB) != 0) {
         PREDEBUG_ERR("Another instance of the process is already running");
         PREDEBUG_ERR("Failed to initialize process with error code=0x%x",
                      errno);
-        exit(errno);
+        exit_to_parent(errno);
     }
 }
 
@@ -37,17 +45,16 @@ procmgr_main_ensure_singleton (void)
 void
 procmgr_main_reassign_parent (void)
 {
-    return; // For now
+    procmgr_context()->parent_shell_pid = getppid();    
     pid_t pid = fork();
-
     if (pid > 0) {
         /* Free up stdout on current tty by killing parent shell fork */
-        kill(getppid(), SIGTERM);
+        kill(procmgr_context()->parent_shell_pid, SIGSTOP);
         exit(0);
     } else if (pid < 0) {
         PREDEBUG_ERR("Failed to initialize process with error code=0x%x",
                      errno);
-        exit(errno);
+        exit_to_parent(errno);
     }
 }
 
@@ -65,6 +72,7 @@ main ()
 {
     (void) procmgr_main_reassign_parent();
     (void) procmgr_main_ensure_singleton();
+
     (void) procmgr_context_init();
     (void) procmgr_debug_init("/tmp/");
     
@@ -72,5 +80,5 @@ main ()
 
     (void) procmgr_event_loop();
     
-    return 0;
+    exit_to_parent(0);
 }
