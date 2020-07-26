@@ -2,6 +2,7 @@
 #include <procmgr_debug.h>
 #include <procmgr_error.h>
 #include <procmgr_context.h>
+#include <procmgr_builtins.h>
 #include <procmgr_utils.h>
 #include <procmgr_pam.h>
 
@@ -66,14 +67,15 @@ procmgr_shell_thread_func (void *arg)
             char ch = getch();
             printf("\nUsername: ");
             char username[24] = {'\0'};
-            for (int i = 0; ;i++) {
+            int idx = 0;
+            while (TRUE) {
                 char chh = getch();
                 if (chh == '\b' || chh == 8 || chh == 127) {
-                    if (i == 0) {
+                    if (idx <= 0 || idx >= 23) {
                         continue;
                     }
-                    i--;
-                    username[i] = '\0';
+                    idx--;
+                    username[idx] = '\0';
                     fprintf(stdout, "\b \b");
                     fflush(stdout);
                     continue;
@@ -85,9 +87,10 @@ procmgr_shell_thread_func (void *arg)
                 }
                 fprintf(stdout, "%c", chh);
                 fflush(stdout);
-                if (i < 23) {
-                    username[i] = chh;
-                    username[i+1] = '\0';
+                if (idx < 23) {
+                    username[idx] = chh;
+                    username[idx+1] = '\0';
+                    idx++;
                 }
             }
 
@@ -95,14 +98,15 @@ procmgr_shell_thread_func (void *arg)
             fflush(stdout);
             fflush(stdin);
             char password[24] = {'\0'};
-            for (int i = 0; ;i++) {
+            idx = 0;
+            while (TRUE) {
                 char chh = getch();
                 if (chh == '\b' || chh == 8 || chh == 127) {
-                    if (i == 0) {
+                    if (idx <= 0 || idx >= 23) {
                         continue;
                     }
-                    i--;
-                    password[i] = '\0';
+                    idx--;
+                    password[idx] = '\0';
                     fprintf(stdout, "\b \b");
                     fflush(stdout);
                     continue;
@@ -114,11 +118,13 @@ procmgr_shell_thread_func (void *arg)
                 }
                 fprintf(stdout, "%c", '*');
                 fflush(stdout);
-                if (i < 23) {
-                    password[i] = chh;
-                    password[i+1] = '\0';
+                if (idx < 23) {
+                    password[idx] = chh;
+                    password[idx+1] = '\0';
+                    idx++;
                 }
             }
+
             if (strlen(username) == 0 || strlen(password) == 0) {
                 continue;
             }
@@ -131,7 +137,7 @@ procmgr_shell_thread_func (void *arg)
                 continue;
             }
         }
-        printf("ProcessManager# ");
+        printf("\nProcessManager# ");
         memset(cmd, '\0', sizeof(cmd));
         current_length = 0;
         while (TRUE) {
@@ -157,8 +163,10 @@ procmgr_shell_thread_func (void *arg)
                 continue;
             }
             if (c == '\n') {
-                printf("\n");
-                procmgr_utils_print_current_timestamp(stdout);
+                if (current_length > 0) {
+                    printf("\n");
+                    procmgr_utils_print_current_timestamp(stdout);
+                }
                 break;
             }
             if (c == '\t') {
@@ -173,13 +181,14 @@ procmgr_shell_thread_func (void *arg)
             cmd[current_length] = '\0';
         }
 
-        printf("\n");
 
         if (strcmp(cmd, "exit") == 0) {
             printf("\nGoodbye!\n");
             is_authenticated=FALSE;
             continue;
         }
+
+        procmgr_builtins_handle(cmd);
     }
     
     /* We must never come here */

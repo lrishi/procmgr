@@ -1,7 +1,8 @@
 #include <procmgr_types.h>
 #include <procmgr_error.h>
+#include <procmgr_proc.h>
 
-
+#include <pty.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

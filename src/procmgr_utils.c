@@ -1,5 +1,4 @@
 #include <procmgr_utils.h>
-#define _XOPEN_SOURCE 600
 
 #include <time.h>
 #include <string.h>

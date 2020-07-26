@@ -1,4 +1,6 @@
 
+SubDirCcFlags -D_GNU_SOURCE ;
+
 ProcMgrMain procmgr :
     procmgr_pam.c
     procmgr_main.c
@@ -7,9 +9,11 @@ ProcMgrMain procmgr :
     procmgr_shell.c
     procmgr_utils.c
     procmgr_context.c
+    procmgr_builtins.c
     :
     :
     pthread
+    util
     pam
     ;
 

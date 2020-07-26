@@ -9,6 +9,7 @@
 #include <syslog.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/types.h>
 
 #define SYSLOG(_level, _fmt, ...)                                   \
     procmgr_context()->debug.flags.log_to_syslog ?                  \
@@ -97,17 +98,31 @@ procmgr_debug_log (procmgr_debug_level_t    level,
     time_t epoch = ts.tv_sec;
     
     strftime(timestamp, sizeof(timestamp), 
-            "%d-%b-%Y %H:%M:%S", localtime(&epoch));
+            "%Z%Y%m%y%H%M%S", localtime(&epoch));
     va_list list;
     va_start(list, format);
-    fprintf(stdout, "\n%s.%06ld %% %s %% %s()+%d: ",
+    
+    char *fdup = strdup(function);
+    int flen = strlen(fdup);
+#define FLEN_MAX 20
+    if (flen > FLEN_MAX) {
+       fdup[FLEN_MAX - 5] = fdup[FLEN_MAX - 6] = '.';
+       fdup[FLEN_MAX - 4] = fdup[flen - 4];
+       fdup[FLEN_MAX - 3] = fdup[flen - 3];
+       fdup[FLEN_MAX - 2] = fdup[flen - 2];
+       fdup[FLEN_MAX - 1] = fdup[flen - 1];
+       fdup[FLEN_MAX] = '\0';
+    }
+    fprintf(stdout, "\n%s.%06ld[P%d=>T%d]%%%s%%%s()+%d: ",
             timestamp,
             ts.tv_nsec / 1000,
+            getpid(),
+            gettid(),
             debug_level_to_string[level],
-            function, line);
+            fdup, line);
+    free(fdup);
     vfprintf(stdout, format, list);
     va_end(list);
-    fprintf(stdout, "\n");
     fflush(stdout);
 }
 
