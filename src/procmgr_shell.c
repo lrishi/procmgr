@@ -126,7 +126,7 @@ procmgr_shell_thread_func (void *arg)
                 is_authenticated = TRUE;
                 break;
             } else {
-                printf("\nAuthentication Failure\n");
+                PROCMGR_LOG_ERROR("Authentication failed: Validate username or password");
                 sleep(2); // Prevent Bruteforce
                 continue;
             }
