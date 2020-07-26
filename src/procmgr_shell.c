@@ -2,6 +2,8 @@
 #include <procmgr_debug.h>
 #include <procmgr_error.h>
 #include <procmgr_context.h>
+#include <procmgr_utils.h>
+#include <procmgr_pam.h>
 
 #include <ctype.h>
 #include <stdio.h>
@@ -26,8 +28,6 @@ getch ()
    tcgetattr(STDIN_FILENO, &oldtc);
    newtc = oldtc;
    newtc.c_lflag &= ~(ICANON | ECHO);
-    newtc.c_cc[VTIME] = 0;
-    newtc.c_cc[VMIN] = 1;
    tcsetattr(STDIN_FILENO, TCSANOW, &newtc);
    ch = getchar();
    tcsetattr(STDIN_FILENO, TCSANOW, &oldtc);
@@ -38,11 +38,9 @@ getch ()
 static void
 sighandler (int signum) {
     fprintf(stdout, "\nType exit to exit\n");
-    fprintf(stdout, "\nProcessManager# "); 
     fflush(stdout);
     memset(cmd, '\0', CMD_LENGTH_MAX);
     current_length = 0;
-    
 }
 
 static void
@@ -61,7 +59,78 @@ procmgr_shell_thread_func (void *arg)
 {
     (void) procmgr_shell_signal_handlers_init();
     printf("\n"); 
+    bool is_authenticated = FALSE;
     while (TRUE) {
+        while (is_authenticated == FALSE) {
+            printf("\nPress any key to get started...");
+            char ch = getch();
+            printf("\nUsername: ");
+            char username[24] = {'\0'};
+            for (int i = 0; ;i++) {
+                char chh = getch();
+                if (chh == '\b' || chh == 8 || chh == 127) {
+                    if (i == 0) {
+                        continue;
+                    }
+                    i--;
+                    username[i] = '\0';
+                    fprintf(stdout, "\b \b");
+                    fflush(stdout);
+                    continue;
+                }
+                if (chh == '\n') {
+                    fprintf(stdout, "\n");
+                    fflush(stdout);
+                    break;
+                }
+                fprintf(stdout, "%c", chh);
+                fflush(stdout);
+                if (i < 23) {
+                    username[i] = chh;
+                    username[i+1] = '\0';
+                }
+            }
+
+            printf("Password: ");
+            fflush(stdout);
+            fflush(stdin);
+            char password[24] = {'\0'};
+            for (int i = 0; ;i++) {
+                char chh = getch();
+                if (chh == '\b' || chh == 8 || chh == 127) {
+                    if (i == 0) {
+                        continue;
+                    }
+                    i--;
+                    password[i] = '\0';
+                    fprintf(stdout, "\b \b");
+                    fflush(stdout);
+                    continue;
+                }
+                if (chh == '\n') {
+                    fprintf(stdout, "\n");
+                    fflush(stdout);
+                    break;
+                }
+                fprintf(stdout, "%c", '*');
+                fflush(stdout);
+                if (i < 23) {
+                    password[i] = chh;
+                    password[i+1] = '\0';
+                }
+            }
+            if (strlen(username) == 0 || strlen(password) == 0) {
+                continue;
+            }
+            if (procmgr_authenticate_system(username, password) == PM_EOK) {
+                is_authenticated = TRUE;
+                break;
+            } else {
+                printf("\nAuthentication Failure\n");
+                sleep(2); // Prevent Bruteforce
+                continue;
+            }
+        }
         printf("ProcessManager# ");
         memset(cmd, '\0', sizeof(cmd));
         current_length = 0;
@@ -83,11 +152,18 @@ procmgr_shell_thread_func (void *arg)
                 fflush(stdout);
                 continue;
             }
+            if (c == '?') {
+                printf("?\nProcessManager# %s", cmd);
+                continue;
+            }
             if (c == '\n') {
+                printf("\n");
+                procmgr_utils_print_current_timestamp(stdout);
                 break;
             }
             if (c == '\t') {
-                break;
+                printf("\nProcessManager# %s", cmd);
+                continue;
             }
             putchar(c); fflush(stdout);
             if (current_length == CMD_LENGTH_MAX) {
@@ -97,13 +173,13 @@ procmgr_shell_thread_func (void *arg)
             cmd[current_length] = '\0';
         }
 
+        printf("\n");
+
         if (strcmp(cmd, "exit") == 0) {
             printf("\nGoodbye!\n");
-            return NULL;
+            is_authenticated=FALSE;
+            continue;
         }
-        printf("\n%s\n", cmd);
-
-
     }
     
     /* We must never come here */

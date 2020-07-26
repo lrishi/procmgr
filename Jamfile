@@ -4,15 +4,17 @@ HDRS ?= $(TOP)/include ;
 
 CCFLAGS ?= -g ;
 
-LINKLIBS ?= -lpthread ;
 OBJDIR = obj-$(OSPLAT) ;
 
 rule ProcMgrMain {
     Echo ProcMgrMain $(1) ;
     NLT = $(LOCATE_TARGET) ;
     LOCATE_TARGET = $(OBJDIR) ;
+    LINKLIBS on $(1) ?= -l$(4) ;
+    LinkLibraries $(1) : $(3) ;
     Main $(<) : $(>) ;
     LOCATE_TARGET = $(NLT) ;
 }
+
 
 SubInclude TOP src ;
