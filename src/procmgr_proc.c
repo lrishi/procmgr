@@ -29,6 +29,7 @@ procmgr_process_create (char    *executable,
         return errno;
     }
     
+    /* First fork for more! */
     if (fork() == 0) {
         
         if (dup2(pipefd[READ_END], STDIN_FILENO) == -1) {
@@ -41,10 +42,15 @@ procmgr_process_create (char    *executable,
         
         char *args[] = {
             "/usr/bin/more",
+            "-30",
             NULL
         };
-
-        execvp("/usr/bin/more", args);
+        #define __MORE_PROC "/usr/bin/more"
+        if(execvp(__MORE_PROC, args) == -1) {
+            PROCMGR_LOG_DEBUG("Unable to start process %s due to error %d",
+                               __MORE_PROC,
+                               errno);
+        }
     }
 
     create_pid = fork();
@@ -73,7 +79,9 @@ procmgr_process_create (char    *executable,
         close(pipefd[WRITE_END]);
 
         if (execvp(executable, arguments) == -1) {
-            /* Notify error (TODO) then exit */
+            PROCMGR_LOG_DEBUG("Unable to start process %s due to error %d",
+                               executable,
+                               errno);
             exit(errno);
         }
 
@@ -99,5 +107,53 @@ procmgr_process_send_signal (pid_t   pid,
                              int     signal)
 {
     return ENOTSUP;
+}
+
+pmerr
+procmgr_process_create_v2 (char    *executable,
+                           int      argc,
+                           char   **args,
+                           pid_t   *pid)
+{
+    pmerr   pe          = PM_EOK;
+    char  **arguments   = NULL;
+
+    pid_t   create_pid;
+
+    create_pid = fork();
+    if (create_pid == 0) {
+        /* New Process */
+        arguments = calloc(argc + 2, sizeof(char*));
+
+        if (arguments == NULL) {
+            /* Notify error (TODO) then exit */
+            exit(ENOMEM);
+        }
+
+        arguments[0] = strdup(executable);
+
+        for (int i = 0; i < argc; i++) {
+            arguments[i + 1] = strdup(args[i]);
+        }
+        
+        if (execvp(executable, arguments) == -1) {
+            PROCMGR_LOG_DEBUG("Unable to start process %s due to error %d",
+                               executable,
+                               errno);
+            exit(errno);
+        }
+
+        /* We must never reach here */
+        exit(ENOTSUP);
+
+    } else {
+        /* Parent process */
+        if (pid != NULL) {
+            *pid = create_pid;
+        }
+
+    }
+    
+    return pe;
 }
 

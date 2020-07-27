@@ -10,6 +10,13 @@ procmgr_process_create(char    *executable,
                        char   **args,
                        pid_t   *pid);
 
+
+pmerr
+procmgr_process_create_v2(char    *executable,
+                          int      argc,
+                          char   **args,
+                          pid_t   *pid);
+
 pmerr
 procmgr_process_send_signal(pid_t   pid,
                             int     signal);

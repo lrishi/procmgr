@@ -50,9 +50,7 @@ procmgr_main_reassign_parent (void)
     int master;
     //pid_t pid = forkpty(&master, NULL, NULL, NULL);
     pid_t pid = fork();
-    printf("Came here0");
     if (pid > 0) {
-        printf("Came here1");
         /* Free up stdout on current tty by killing parent shell fork */
         kill(procmgr_context()->parent_shell_pid, SIGSTOP);
         exit(0);
@@ -61,7 +59,6 @@ procmgr_main_reassign_parent (void)
                      errno);
         exit_to_parent(errno);
     }
-    printf("Came here2");
 }
 
 void
